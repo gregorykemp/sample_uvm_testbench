@@ -38,8 +38,14 @@ package vscale_mul_div_unit;
 
    // This is a computed value based on defined value XPR_LEN.
    // It's used to constrain operand values.
-   localparam XPR_LEN_MAXINT = (2 ** `XPR_LEN) - 1;
-
+   // FIXME Cadence Xcellium implements params as signed 32-bit integers.  This
+   // code gives unpredictable results for that simulator.  And because the 
+   // data bus is 32-bit unsigned, we can't just tighten this up and ignore the
+   // problem.  If you're hell-bent on using Xcellium you may have to randomize
+   // the data in two pieces: 15:0 and 31:16.  I don't see an alternative that
+   // explores the whole data space.
+   localparam XPR_LEN_MAXINT = ((2 ** `XPR_LEN) - 1);
+   
 
    // Import UVM packages.
    import uvm_pkg::*;
@@ -83,32 +89,39 @@ package vscale_mul_div_unit;
       // generation constraints
 
       // Really need to know if this is signed before we sweat the sign itself.
-      constraint c_sign_order_op1 { solve op1_signedp before op1_sign; };
-      constraint c_sign_order_op2 { solve op2_signedp before op2_sign; };
+      constraint c_sign_order_op1 { solve op1_signedp before op1_sign; }
+      constraint c_sign_order_op2 { solve op2_signedp before op2_sign; }
 
       // Need to keep both operands signed or unsigned.  Don't mix and match.
-      constraint c_signed_ops_1 { solve op1_signedp before op2_signedp; };
-      constraint c_signed_ops_2 { op2_signedp == op1_signedp;           };
+      constraint c_signed_ops_1 { solve op1_signedp before op2_signedp; }
+      constraint c_signed_ops_2 { op2_signedp == op1_signedp;           }
 
       // We want to ensure values 0, 1, 2, -1, and -2 occur more often than
       // statistically expected.  0 and 1 are "magic" values in multiplication
-      // and division.  2 simply shifts by one bit.  Distributions add up to 
-      // 100% because that's how I like it.  Constraints are soft in case a
-      // sequence wants to override the value later.
-      constraint c_op1_value { soft op1 dist { 0 := 5, 1 := 5, 2 := 5, [3:XPR_LEN_MAXINT] := 85 }; };
-      constraint c_op2_value { soft op2 dist { 0 := 5, 1 := 5, 2 := 5, [3:XPR_LEN_MAXINT] := 85 }; };
+      // and division.  2 simply shifts by one bit.  Constraints are soft in 
+      // case a sequence wants to override the value later.  I'm using the 
+      // :/ dist syntax because for every 1 time I get a zero (5% of the time)
+      // I want 17 "regular" numbers (85% of the time).
+
+      // FIXME Cadence Xcellium codes these constraints as signed 32-bit 
+      // integers which is a problem for 32-bit unsigned random data.  You'll 
+      // see warning messages about negative numbers and reversed bit ranges 
+      // from Xcellium.
+      constraint c_op1_value { soft op1 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:XPR_LEN_MAXINT] :/ 17 }; }
+      constraint c_op2_value { soft op2 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:XPR_LEN_MAXINT] :/ 17 }; }
 
       // Now make the sign consistent with the value.
-      constraint c_op1_sign { op1_signedp -> op1_sign == op1[`XPR_LEN-1]; };
-      constraint c_op2_sign { op2_signedp -> op2_sign == op2[`XPR_LEN-1]; };
+      constraint c_op1_sign { op1_signedp -> op1_sign == op1[`XPR_LEN-1]; }
+      constraint c_op2_sign { op2_signedp -> op2_sign == op2[`XPR_LEN-1]; }
 
       // Require the opcode to be a legal value.
-      constraint c_opcode_legal { opcode inside { `MD_OP_MUL, `MD_OP_DIV, `MD_OP_REM }; };
+      // FIXME what if we give it an illegal opcode? What happens then?
+      constraint c_opcode_legal { opcode inside { `MD_OP_MUL, `MD_OP_DIV, `MD_OP_REM }; }
 
       // Constraints on rounding mode.
-      constraint c_mux_select_1 { solve opcode before mux_select; };
-      constraint c_mux_select_2 { if (opcode == `MD_OP_REM) (mux_select == `MD_OUT_REM); }; 
-      constraint c_mux_select_3 { if (opcode != `MD_OP_REM) (mux_select != `MD_OUT_REM); }; 
+      constraint c_mux_select_1 { solve opcode before mux_select; }
+      constraint c_mux_select_2 { if (opcode == `MD_OP_REM) (mux_select == `MD_OUT_REM); }
+      constraint c_mux_select_3 { if (opcode != `MD_OP_REM) (mux_select != `MD_OUT_REM); }
 
       // class constructor.
       function new (string name ="");
@@ -762,18 +775,23 @@ package vscale_mul_div_unit;
       int tx_count;
 
       // Register with the factory.
-      `uvm_component_utils(input_coverage);
+      `uvm_component_utils(input_coverage)
 
       // Define cover group.
       // For now not covering data values.  Might be a gap.
       covergroup cov_operations;
          // 4 elements per group, only 3 are valid.
+         // FIXME this would be a good application of ignore_bins if that was
+         // a widely supported feature.
+         // FIXME could you use bins to make the cross product a little more
+         // meaningful, at least?  So people aren't chasing illegal x illegal
+         // conditions?
          ops: coverpoint tx.opcode;
          mux: coverpoint tx.mux_select;
 
          // Cross opcodes with mux selects.
          ops_mux: cross ops, mux;
-      endgroup : cov_operations;
+      endgroup : cov_operations
 
       // Constructor, which also has to allocate objects.
       function new(string name, uvm_component parent);
@@ -782,9 +800,11 @@ package vscale_mul_div_unit;
       endfunction : new
 
       // This write() method receives data from the subscriber port.
-      function void write(input_transaction in);
+      // Some simulators require the argument to be named consistent with the
+      // parent. 
+      virtual function void write(input_transaction t);
          // Sample the transaction data.
-         tx = in;
+         tx = t;
          // Since we don't have a sample event we have to do this manually.
          cov_operations.sample();
          // This is local action to count number of transactions.
@@ -792,7 +812,7 @@ package vscale_mul_div_unit;
       endfunction : write
 
       // Extract phase runs after simulation.
-      virtual function void extract_phase(uvm_phase phase);
+      function void extract_phase(uvm_phase phase);
          `uvm_info(get_type_name(), $sformatf("Number of transactions = %0d", tx_count), UVM_LOW)
          `uvm_info(get_type_name(), $sformatf("Current coverage = %2.2f", cov_operations.get_coverage()), UVM_LOW)
       endfunction : extract_phase
@@ -929,7 +949,7 @@ package vscale_mul_div_unit;
 
       // Always, register with class factory.
       `uvm_component_utils(muldiv_test_3)
-
+      
       // Instantiate the environment.
       muldiv_env m_env;
 
@@ -1025,8 +1045,10 @@ endinterface : dut_if
 
 module top;
 
-   // Import packages.
+   // Import UVM.
    import uvm_pkg::*;
+   // import my package.
+   import vscale_mul_div_unit::*;
 
    // Name the test via command-line interface.
    string test_name;
