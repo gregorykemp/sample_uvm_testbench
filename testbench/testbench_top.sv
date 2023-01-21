@@ -767,22 +767,12 @@ package vscale_mul_div_unit;
       // Define cover group.
       // For now not covering data values.  Might be a gap.
       covergroup cov_operations;
-         // 4 elements per group, only 3 are valid.  I should use defined values
-         // here but the design doesn't have them.
-         coverpoint tx.opcode
-            {
-               bins opcodes = tx.opcode;
-               illegal_bins illegal_opcodes = (tx.opcode == 2'd3);
-            }
-        coverpoint tx.mux_select
-            {
-            bins selects = tx.mux_select;
-            illegal_bins illegal_mux_selects = (tx.mux_select == 2'd3);
-            }
+         // 4 elements per group, only 3 are valid.
+         ops: coverpoint tx.opcode;
+         mux: coverpoint tx.mux_select;
 
          // Cross opcodes with mux selects.
-         // ops_mux: cross ops, mux;
-        ops_mux: cross tx.opcode, tx_mux_select;
+         ops_mux: cross ops, mux;
       endgroup : cov_operations;
 
       // Constructor, which also has to allocate objects.
@@ -792,7 +782,7 @@ package vscale_mul_div_unit;
       endfunction : new
 
       // This write() method receives data from the subscriber port.
-      pure virtual function void write(input_transaction in);
+      function void write(input_transaction in);
          // Sample the transaction data.
          tx = in;
          // Since we don't have a sample event we have to do this manually.
