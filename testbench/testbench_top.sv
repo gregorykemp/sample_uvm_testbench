@@ -36,17 +36,6 @@
 
 package vscale_mul_div_unit;
 
-   // This is a computed value based on defined value XPR_LEN.
-   // It's used to constrain operand values.
-   // FIXME Cadence Xcellium implements params as signed 32-bit integers.  This
-   // code gives unpredictable results for that simulator.  And because the 
-   // data bus is 32-bit unsigned, we can't just tighten this up and ignore the
-   // problem.  If you're hell-bent on using Xcellium you may have to randomize
-   // the data in two pieces: 15:0 and 31:16.  I don't see an alternative that
-   // explores the whole data space.
-   localparam XPR_LEN_MAXINT = ((2 ** `XPR_LEN) - 1);
-   
-
    // Import UVM packages.
    import uvm_pkg::*;
 
@@ -103,12 +92,8 @@ package vscale_mul_div_unit;
       // :/ dist syntax because for every 1 time I get a zero (5% of the time)
       // I want 17 "regular" numbers (85% of the time).
 
-      // FIXME Cadence Xcellium codes these constraints as signed 32-bit 
-      // integers which is a problem for 32-bit unsigned random data.  You'll 
-      // see warning messages about negative numbers and reversed bit ranges 
-      // from Xcellium.
-      constraint c_op1_value { soft op1 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:XPR_LEN_MAXINT] :/ 17 }; }
-      constraint c_op2_value { soft op2 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:XPR_LEN_MAXINT] :/ 17 }; }
+      constraint c_op1_value { soft op1 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:$] :/ 17 }; }
+      constraint c_op2_value { soft op2 dist { 0 :/1 , 1 :/ 1 , 2 :/ 1, [3:$] :/ 17 }; }
 
       // Now make the sign consistent with the value.
       constraint c_op1_sign { op1_signedp -> op1_sign == op1[`XPR_LEN-1]; }
@@ -783,14 +768,21 @@ package vscale_mul_div_unit;
          // 4 elements per group, only 3 are valid.
          // FIXME this would be a good application of ignore_bins if that was
          // a widely supported feature.
-         // FIXME could you use bins to make the cross product a little more
-         // meaningful, at least?  So people aren't chasing illegal x illegal
-         // conditions?
-         ops: coverpoint tx.opcode;
-         mux: coverpoint tx.mux_select;
+         coverpoint tx.opcode 
+         {
+            bins mul = {`MD_OP_MUL};
+            bins div = {`MD_OP_DIV};
+            bins rem = {`MD_OP_REM};
+         }
+         coverpoint tx.mux_select
+         {
+            bins lo  = {`MD_OUT_LO };
+            bins hi  = {`MD_OUT_HI };
+            bins rem = {`MD_OUT_REM};
+         }
 
          // Cross opcodes with mux selects.
-         ops_mux: cross ops, mux;
+         ops_mux: cross tx.opcode, tx.mux_select;
       endgroup : cov_operations
 
       // Constructor, which also has to allocate objects.
@@ -811,11 +803,11 @@ package vscale_mul_div_unit;
          tx_count++;
       endfunction : write
 
-      // Extract phase runs after simulation.
-      function void extract_phase(uvm_phase phase);
+      // Report summary info after simulation.
+      function void report_phase(uvm_phase phase);
          `uvm_info(get_type_name(), $sformatf("Number of transactions = %0d", tx_count), UVM_LOW)
          `uvm_info(get_type_name(), $sformatf("Current coverage = %2.2f", cov_operations.get_coverage()), UVM_LOW)
-      endfunction : extract_phase
+      endfunction : report_phase
 
    endclass : input_coverage
 
@@ -1105,7 +1097,7 @@ module top;
       // And read that command line value.  Result written to test_name arugment.
       void' (cmdline.get_arg_value("+test=", test_name));
       // Safety value in case user didn't provide an option.
-      // FIXME - right now we just die if it's not a legal test case.
+      // FIXME validate input - right now we just die if it's not a legal test case.
       if(test_name.len() == 0) test_name = "muldiv_test_3";
 
       // Whatever it was, run the test.
