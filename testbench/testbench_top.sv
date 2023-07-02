@@ -76,14 +76,16 @@ module top;
       // If set, then run_test will call $finish after all phases are executed.
       uvm_top.finish_on_completion = 1;
 
-      // Get handle to the command line processor singleton object.
-      cmdline = uvm_cmdline_processor::get_inst();
-      // And read that command line value.  Result written to test_name arugment.
-      void' (cmdline.get_arg_value("+test=", test_name));
-      // Safety value in case user didn't provide an option.
-      // FIXME validate input - right now we just die if it's not a legal test case.
-      if(test_name.len() == 0) test_name = "muldiv_test_3";
-
+      `ifdef COMMAND_LINE_TEST_NAME
+         // Get handle to the command line processor singleton object.
+         cmdline = uvm_cmdline_processor::get_inst();
+         // And read that command line value.  Result written to test_name arugment.
+         void' (cmdline.get_arg_value("+test=", test_name));
+         // Safety value in case user didn't provide an option.
+         // FIXME validate input - right now we just die if it's not a legal test case.
+         if(test_name.len() == 0) test_name = "muldiv_test_3";
+      `endif
+      
       // Whatever it was, run the test.
       run_test(test_name);
    end

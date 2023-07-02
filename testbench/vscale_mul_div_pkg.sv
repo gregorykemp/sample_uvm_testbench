@@ -30,5 +30,10 @@ package vscale_mul_div_pkg;
    `include "env/input_coverage.svh"
    `include "env/muldiv_scoreboard.svh"
    `include "env/muldiv_env.svh"
+
+   // Include tests
+   `include "tests/muldiv_test_1.svh"
+   `include "tests/muldiv_test_2.svh"
+   `include "tests/muldiv_test_3.svh"
    
 endpackage : vscale_mul_div_pkg
