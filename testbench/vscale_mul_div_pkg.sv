@@ -32,6 +32,7 @@ package vscale_mul_div_pkg;
    `include "env/muldiv_env.svh"
 
    // Include tests
+   `include "tests/muldiv_test_base.svh"
    `include "tests/muldiv_test_1.svh"
    `include "tests/muldiv_test_2.svh"
    `include "tests/muldiv_test_3.svh"

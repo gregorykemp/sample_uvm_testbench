@@ -12,7 +12,7 @@ CDS_DATABASE  = -sv -64 -access rwc
 CDS_INCDIR    = -incdir ../design/  
 CDS_DEFINES   = # options: -define DEF_DUMMY -timescale 1ns/100ps
 CDS_DEBUG     = # options: -debug -linedebug -classlinedebug
-CDS_UVM_FLAGS = -uvm +UVM_NO_RELNOTES +UVM_TESTNAME=muldiv_test_3 # options: -uvm +UVM_NO_RELNOTES +UVM_TESTNAME=muldiv_test_1, muldiv_test_2, muldiv_test_3
+CDS_UVM_FLAGS = -uvm +UVM_NO_RELNOTES +ELABORATION_PHASE +UVM_TESTNAME=muldiv_test_3 # options: -uvm +UVM_NO_RELNOTES +ELABORATION_PHASE +UVM_TESTNAME=muldiv_test_1, muldiv_test_2, muldiv_test_3
 CDS_UVM_DEBUG = # options: -uvmlinedebug, +UVM_PHASE_TRACE, +UVM_OBJECTION_TRACE,
 CDS_COV_FLAGS = # options:
 CDS_FILES			= -f rtl.f
