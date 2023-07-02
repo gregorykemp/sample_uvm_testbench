@@ -21,5 +21,9 @@ package vscale_mul_div_pkg;
    `include "agents/input/input_sequencer.svh"
    `include "agents/input/input_agent.svh"
       
-   // 
+   // Include agents/output
+   `include "agents/output/output_transaction.svh"
+   `include "agents/output/output_monitor.svh"
+   `include "agents/output/output_agent.svh"
+   
 endpackage : vscale_mul_div_pkg
