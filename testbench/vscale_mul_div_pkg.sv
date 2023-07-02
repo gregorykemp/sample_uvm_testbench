@@ -26,4 +26,9 @@ package vscale_mul_div_pkg;
    `include "agents/output/output_monitor.svh"
    `include "agents/output/output_agent.svh"
    
+   // Include env
+   `include "env/input_coverage.svh"
+   `include "env/muldiv_scoreboard.svh"
+   `include "env/muldiv_env.svh"
+   
 endpackage : vscale_mul_div_pkg
