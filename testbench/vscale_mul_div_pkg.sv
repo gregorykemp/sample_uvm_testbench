@@ -10,6 +10,5 @@ package vscale_mul_div_pkg;
    `include "uvm_macros.svh"
 
    // Include testbench components and objects
-   
 
 endpackage : vscale_mul_div_pkg

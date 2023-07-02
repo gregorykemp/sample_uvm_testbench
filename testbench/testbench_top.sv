@@ -19,28 +19,13 @@
 // 
 // ------------------------------------------------------------------------------
 
-// Source UVM libraries.
-`include "uvm_macros.svh"
-
-// Source design defined values for more readable code.
-`include "vscale_md_constants.vh"
-`include "vscale_ctrl_constants.vh"
-`include "rv32_opcodes.vh"
-
-// FIXME Do I need to include the design too?  Doesn't seem right.
-// May be an artifact of EDA Playground.
-`include "vscale_mul_div.v"
-
 // ------------------------------------------------------------------------------
 // Top-level module for unit test environment.
 
+ // import my package.
+import vscale_mul_div_pkg::*; 
+
 module top;
-
-   // Import UVM.
-   import uvm_pkg::*;
-   // import my package.
-   import vscale_mul_div_unit::*;
-
    // Name the test via command-line interface.
    string test_name;
 
