@@ -5,7 +5,7 @@
    // FIXME : can I make a generic test class and then extend specific tests
    //         with their own run_phase options?  Something to explore later.
 
-   class muldiv_test_1 extends uvm_test;
+   class muldiv_test_1 extends muldiv_test_base;
 
       // Always, register with class factory.
       `uvm_component_utils(muldiv_test_1)

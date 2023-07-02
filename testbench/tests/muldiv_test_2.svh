@@ -2,7 +2,7 @@
 // ----------------------------------------
 // A second test.
 
-class muldiv_test_2 extends uvm_test;
+class muldiv_test_2 extends muldiv_test_base;
 
    // always, register with class factory
    `uvm_component_utils(muldiv_test_2)
