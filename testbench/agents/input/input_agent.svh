@@ -5,7 +5,9 @@
    class input_agent extends uvm_agent;
       protected uvm_active_passive_enum is_active = UVM_ACTIVE;
 
-      input_sequencer sequencer;
+      typedef input_sequencer input_sequencer_t;
+
+      input_sequencer_t sequencer;
       input_driver    driver;
       input_monitor   monitor;
 
