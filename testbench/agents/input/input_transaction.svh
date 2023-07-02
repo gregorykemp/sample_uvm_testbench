@@ -66,6 +66,7 @@ class input_transaction extends uvm_sequence_item;
    // This function dumps the whole contents of the object.  Expected use is
    // debugging and extended error reporting.
    function void print_full();
+      // FIXME create a string with these information and add an uvm_info
       $write("Input transaction:\n");
       $write("   Opcode: ");
       case (opcode)
